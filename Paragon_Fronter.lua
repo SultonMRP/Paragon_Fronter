@@ -222,6 +222,28 @@ local function RefreshExpBarFill(status)
     status:SetValue(current)
 end
 
+-- Bartender reparents ReputationWatchBar and MainMenuExpBar onto its own
+-- bars. Following those stolen frames yanks Paragon off the saved
+-- MainMenuBar dock. Only stack on a default bar that still belongs there.
+local function IsDefaultBarParent(frame)
+    if not frame or not frame.GetParent then
+        return false
+    end
+    local parent = frame:GetParent()
+    return parent == MainMenuBar or parent == MainMenuBarArtFrame
+end
+
+local function GetExpBarAnchor()
+    local rep = ReputationWatchBar
+    if rep and rep:IsVisible() and IsDefaultBarParent(rep) then
+        return rep, "TOP"
+    end
+    if MainMenuBar then
+        return MainMenuBar, "TOP"
+    end
+    return UIParent, "BOTTOM"
+end
+
 local function ApplyExpBarLayout()
     local frame = _G.ParagonExpBar
     if not frame then
@@ -230,14 +252,9 @@ local function ApplyExpBarLayout()
 
     local x = EXP_BAR_BASE_X + GetExpBarOffsetX()
     local y = EXP_BAR_BASE_Y + GetExpBarOffset()
+    local anchor, relativePoint = GetExpBarAnchor()
     frame:ClearAllPoints()
-    if ReputationWatchBar and ReputationWatchBar:IsVisible() then
-        frame:SetPoint("BOTTOM", ReputationWatchBar, "TOP", x, y)
-    elseif MainMenuBar then
-        frame:SetPoint("BOTTOM", MainMenuBar, "TOP", x, y)
-    else
-        frame:SetPoint("BOTTOM", UIParent, "BOTTOM", x, y)
-    end
+    frame:SetPoint("BOTTOM", anchor, relativePoint, x, y)
 
     local scaleX = GetExpBarScaleX()
     local scaleY = GetExpBarScaleY()
@@ -303,6 +320,26 @@ local function HookExpBar()
 
     if type(ParagonExpBar_Update) == "function" then
         hooksecurefunc("ParagonExpBar_Update", RescueExpBar)
+    end
+
+    if type(ReputationWatchBar_Update) == "function" then
+        hooksecurefunc("ReputationWatchBar_Update", RescueExpBar)
+    end
+
+    if type(ExhaustionTick_Update) == "function" then
+        hooksecurefunc("ExhaustionTick_Update", RescueExpBar)
+    end
+
+    local xp = _G.MainMenuExpBar
+    if xp and not xp._pfrontHooked then
+        local prev = xp.GetScript and xp:GetScript("OnShow")
+        xp:SetScript("OnShow", function(self, ...)
+            if prev then
+                prev(self, ...)
+            end
+            RescueExpBar()
+        end)
+        xp._pfrontHooked = true
     end
 
     if type(UIParagon_ShowMainMenuXP_OnClick) == "function" and not visibilityHooked then

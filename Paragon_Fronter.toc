@@ -2,7 +2,7 @@
 ## Title: Paragon Fronter
 ## Notes: Keeps the Aethro Paragon window in front, and the extra XP bar visible. Does not edit AethroParagon.
 ## Author: Sulton
-## Version: 1.2.2
+## Version: 1.2.4
 ## OptionalDeps: AethroParagon
 ## SavedVariablesPerCharacter: ParagonFronterDB
 
